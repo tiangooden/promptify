@@ -1,0 +1,32 @@
+server:
+  port: ${PORT:8080}
+logging:
+  level:
+    org.atmosphere: warn
+spring:
+  mustache:
+    check-template-location: false
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/llm
+    username: postgres
+    password: password
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+vaadin:
+  launch-browser: true
+  allowed-packages: com.vaadin,org.vaadin,com.flowingcode,com.example.application
+
+ollama:
+  host: http://localhost:11434
+  query-path: /api/generate
+  query-model-name: gemma3
+  embed-path: /api/embeddings
+  embed-model-name: nomic-embed-text

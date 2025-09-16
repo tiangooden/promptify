@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@polymer/polymer": "3.5.2",
+    "@tailwindcss/vite": "^4.1.11",
     "@vaadin/bundles": "24.8.4",
     "@vaadin/common-frontend": "0.0.19",
     "@vaadin/hilla-file-router": "24.8.3",
@@ -25,10 +26,12 @@
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
     "lit": "3.3.0",
+    "lucide-react": "^0.344.0",
     "proj4": "2.15.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-router": "7.6.1"
+    "react-router": "7.6.1",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@babel/preset-react": "7.27.1",
@@ -126,7 +129,7 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "99c3a6206aba97a3a8ec00c4fef2affe526e1df2dcf4cefe2f3bd0167f3dd2c2"
+    "hash": "a0cb8110e7c980a71707af129009046391777903b731c68b6807c669b02e46ea"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -232,6 +235,9 @@
     "@vaadin/dashboard": "24.8.4",
     "@vaadin/grid-pro": "24.8.4",
     "@vaadin/map": "24.8.4",
-    "@vaadin/rich-text-editor": "24.8.4"
+    "@vaadin/rich-text-editor": "24.8.4",
+    "lucide-react": "$lucide-react",
+    "tailwindcss": "$tailwindcss",
+    "@tailwindcss/vite": "$@tailwindcss/vite"
   }
 }

@@ -1,7 +1,8 @@
 import { ViewConfig } from '@vaadin/hilla-file-router/types.js';
-import { useSignal } from '@vaadin/hilla-react-signals';
-import { Button, Notification, TextField } from '@vaadin/react-components';
-import { HelloWorldService } from 'Frontend/generated/endpoints.js';
+import ChatInterface from 'Frontend/components/ChatInterface';
+import DocumentManagement from 'Frontend/components/DocumentManagement';
+import TabNavigation from 'Frontend/components/TabNavigation';
+import { useState } from 'react';
 
 export const config: ViewConfig = {
   menu: { order: 0, icon: 'line-awesome/svg/globe-solid.svg' },
@@ -9,26 +10,18 @@ export const config: ViewConfig = {
 };
 
 export default function HelloWorldView() {
-  const name = useSignal('');
+  const [activeTab, setActiveTab] = useState<'chat' | 'documents'>('chat');
 
   return (
-    <>
-      <section className="flex p-m gap-m items-end">
-        <TextField
-          label="Your name"
-          onValueChanged={(e) => {
-            name.value = e.detail.value;
-          }}
-        />
-        <Button
-          onClick={async () => {
-            const serverResponse = await HelloWorldService.sayHello(name.value);
-            Notification.show(serverResponse);
-          }}
-        >
-          Say hello
-        </Button>
-      </section>
-    </>
+    <div className="h-screen bg-slate-50 flex flex-col">
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'chat' ? (
+          <ChatInterface />
+        ) : (
+          <DocumentManagement />
+        )}
+      </div>
+    </div>
   );
 }

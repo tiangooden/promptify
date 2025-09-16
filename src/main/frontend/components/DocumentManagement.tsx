@@ -25,6 +25,7 @@ import {
 import { nanoid } from 'nanoid';
 import { Document, DocumentFilter, ViewMode } from '../types/document';
 import DocumentModal from './DocumentModal';
+import { getDocuments, deleteDocument, uploadDocument } from '../utils/api';
 
 export default function DocumentManagement() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -33,6 +34,8 @@ export default function DocumentManagement() {
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // New state for loading
+  const [error, setError] = useState<string | null>(null); // New state for error messages
   const [filter, setFilter] = useState<DocumentFilter>({
     search: '',
     type: 'all',
@@ -40,44 +43,23 @@ export default function DocumentManagement() {
     sortOrder: 'desc'
   });
 
-  // Sample documents for demonstration
   useEffect(() => {
-    const sampleDocs: Document[] = [
-      {
-        id: nanoid(),
-        name: 'Project Proposal.pdf',
-        type: 'pdf',
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15'),
-        description: 'Initial project proposal document',
-      },
-      {
-        id: nanoid(),
-        name: 'Meeting Notes.md',
-        type: 'md',
-        createdAt: new Date('2024-01-20'),
-        updatedAt: new Date('2024-01-22'),
-        description: 'Weekly team meeting notes',
-      },
-      {
-        id: nanoid(),
-        name: 'Budget Spreadsheet.xlsx',
-        type: 'xlsx',
-        createdAt: new Date('2024-01-18'),
-        updatedAt: new Date('2024-01-25'),
-        description: 'Q1 budget planning spreadsheet',
-      },
-      {
-        id: nanoid(),
-        name: 'Design Mockups.png',
-        type: 'image',
-        createdAt: new Date('2024-01-12'),
-        updatedAt: new Date('2024-01-12'),
-        description: 'UI/UX design mockups',
-      }
-    ];
-    setDocuments(sampleDocs);
+    fetchDocuments();
   }, []);
+
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const fetchedDocs = await getDocuments();
+      setDocuments(fetchedDocs);
+    } catch (err) {
+      console.error("Failed to fetch documents:", err);
+      setError("Failed to load documents. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter and sort documents
   useEffect(() => {
@@ -179,18 +161,38 @@ export default function DocumentManagement() {
     }
   };
 
-  const handleDeleteDocument = (docId: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== docId));
-    setSelectedDocuments(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(docId);
-      return newSet;
-    });
+  const handleDeleteDocument = async (docId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await deleteDocument(docId);
+      setDocuments(prev => prev.filter(doc => doc.id !== docId));
+      setSelectedDocuments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(docId);
+        return newSet;
+      });
+    } catch (err) {
+      console.error(`Failed to delete document ${docId}:`, err);
+      setError(`Failed to delete document. Please try again.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    setDocuments(prev => prev.filter(doc => !selectedDocuments.has(doc.id)));
-    setSelectedDocuments(new Set());
+  const handleDeleteSelected = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await Promise.all(Array.from(selectedDocuments).map(id => deleteDocument(id)));
+      setDocuments(prev => prev.filter(doc => !selectedDocuments.has(doc.id)));
+      setSelectedDocuments(new Set());
+    } catch (err) {
+      console.error("Failed to delete selected documents:", err);
+      setError("Failed to delete selected documents. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEditDocument = (doc: Document) => {
@@ -198,29 +200,29 @@ export default function DocumentManagement() {
     setShowModal(true);
   };
 
-  const handleSaveDocument = (docData: Partial<Document>) => {
-    if (editingDocument) {
-      // Update existing document
-      setDocuments(prev => prev.map(doc => 
-        doc.id === editingDocument.id 
-          ? { ...doc, ...docData, updatedAt: new Date() }
-          : doc
-      ));
-    } else {
-      // Create new document
-      const newDoc: Document = {
-        id: nanoid(),
-        name: docData.name || 'Untitled Document',
-        type: docData.type || 'txt',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        description: docData.description || '',
-      };
-      setDocuments(prev => [newDoc, ...prev]);
+  const handleSaveDocument = async (docData: Partial<Document>, file?: File) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (editingDocument) {
+        // Update existing document (not implemented in API yet)
+        setDocuments(prev => prev.map(doc => 
+          doc.id === editingDocument.id 
+            ? { ...doc, ...docData, updatedAt: new Date() }
+            : doc
+        ));
+      } else if (file) {
+        const newDoc = await uploadDocument(file);
+        setDocuments(prev => [newDoc, ...prev]);
+      }
+      setShowModal(false);
+      setEditingDocument(null);
+    } catch (err) {
+      console.error("Failed to save document:", err);
+      setError("Failed to save document. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    
-    setShowModal(false);
-    setEditingDocument(null);
   };
 
   return (
@@ -232,6 +234,7 @@ export default function DocumentManagement() {
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors duration-150"
+            disabled={isLoading} // Disable button when loading
           >
             <Plus size={16} />
             Add Document
@@ -249,6 +252,7 @@ export default function DocumentManagement() {
               value={filter.search}
               onChange={(e) => setFilter(prev => ({ ...prev, search: e.target.value }))}
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all duration-150"
+              disabled={isLoading} // Disable input when loading
             />
           </div>
 
@@ -261,6 +265,7 @@ export default function DocumentManagement() {
                   ? 'bg-emerald-100 text-emerald-700' 
                   : 'text-slate-500 hover:bg-slate-50'
               }`}
+              disabled={isLoading} // Disable button when loading
             >
               <List size={16} />
             </button>
@@ -271,6 +276,7 @@ export default function DocumentManagement() {
                   ? 'bg-emerald-100 text-emerald-700' 
                   : 'text-slate-500 hover:bg-slate-50'
               }`}
+              disabled={isLoading} // Disable button when loading
             >
               <Grid3X3 size={16} />
             </button>
@@ -287,6 +293,7 @@ export default function DocumentManagement() {
               <button
                 onClick={handleDeleteSelected}
                 className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors duration-150"
+                disabled={isLoading} // Disable button when loading
               >
                 <Trash2 size={14} />
                 Delete Selected
@@ -294,6 +301,7 @@ export default function DocumentManagement() {
               <button
                 onClick={() => setSelectedDocuments(new Set())}
                 className="p-1 text-slate-400 hover:text-slate-600 transition-colors duration-150"
+                disabled={isLoading} // Disable button when loading
               >
                 <X size={16} />
               </button>
@@ -304,7 +312,17 @@ export default function DocumentManagement() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
-        {filteredDocuments.length === 0 ? (
+        {error && ( // Display error message
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> {error}</span>
+          </div>
+        )}
+        {isLoading && filteredDocuments.length === 0 ? ( // Show loading indicator when fetching initial documents
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500"></div>
+          </div>
+        ) : filteredDocuments.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <FileText size={48} className="mx-auto mb-4 text-slate-300" />
@@ -326,6 +344,7 @@ export default function DocumentManagement() {
                     <button
                       onClick={handleSelectAll}
                       className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
+                      disabled={isLoading} // Disable button when loading
                     >
                       {selectedDocuments.size === filteredDocuments.length ? 
                         <CheckSquare size={16} /> : 
@@ -347,6 +366,7 @@ export default function DocumentManagement() {
                       <button
                         onClick={() => handleSelectDocument(doc.id)}
                         className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
+                        disabled={isLoading} // Disable button when loading
                       >
                         {selectedDocuments.has(doc.id) ? 
                           <CheckSquare size={16} /> : 
@@ -371,6 +391,7 @@ export default function DocumentManagement() {
                           onClick={() => handleEditDocument(doc)}
                           className="p-1 text-slate-400 hover:text-slate-600 transition-colors duration-150"
                           title="Edit"
+                          disabled={isLoading} // Disable button when loading
                         >
                           <Edit3 size={14} />
                         </button>
@@ -378,6 +399,7 @@ export default function DocumentManagement() {
                           onClick={() => handleDeleteDocument(doc.id)}
                           className="p-1 text-slate-400 hover:text-red-500 transition-colors duration-150"
                           title="Delete"
+                          disabled={isLoading} // Disable button when loading
                         >
                           <Trash2 size={14} />
                         </button>
@@ -398,6 +420,7 @@ export default function DocumentManagement() {
                     <button
                       onClick={() => handleSelectDocument(doc.id)}
                       className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
+                      disabled={isLoading} // Disable button when loading
                     >
                       {selectedDocuments.has(doc.id) ? 
                         <CheckSquare size={16} /> : 
@@ -410,6 +433,7 @@ export default function DocumentManagement() {
                       onClick={() => handleEditDocument(doc)}
                       className="p-1 text-slate-400 hover:text-slate-600 transition-colors duration-150"
                       title="Edit"
+                      disabled={isLoading} // Disable button when loading
                     >
                       <Edit3 size={14} />
                     </button>
@@ -417,6 +441,7 @@ export default function DocumentManagement() {
                       onClick={() => handleDeleteDocument(doc.id)}
                       className="p-1 text-slate-400 hover:text-red-500 transition-colors duration-150"
                       title="Delete"
+                      disabled={isLoading} // Disable button when loading
                     >
                       <Trash2 size={14} />
                     </button>
@@ -452,6 +477,7 @@ export default function DocumentManagement() {
             setShowModal(false);
             setEditingDocument(null);
           }}
+          // isLoading={isLoading} // Pass isLoading to DocumentModal
         />
       )}
     </div>

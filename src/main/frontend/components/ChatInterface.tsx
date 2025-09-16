@@ -5,11 +5,14 @@ import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import Sidebar from './Sidebar';
 import { Message, ChatSession } from '../types/chat';
+import { sendMessage } from '../utils/api';
 
 export default function ChatInterface() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false); // New state for AI response generation
+  const [error, setError] = useState<string | null>(null); // New state for error messages
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -22,19 +25,35 @@ export default function ChatInterface() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isGenerating]); // Add isGenerating to dependencies
 
-  // Create new chat session
+  useEffect(() => {
+    // No longer fetching sessions or messages on initial load or session change
+    // The chat interface will now operate as a single, continuous chat without explicit sessions
+    // We will simulate a single session for now.
+    if (!currentSessionId) {
+      const newSession: ChatSession = {
+        id: nanoid(),
+        title: "New Chat",
+        messages: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      setSessions([newSession]);
+      setCurrentSessionId(newSession.id);
+    }
+  }, [currentSessionId]);
+
+  // Create new chat session (now just clears messages)
   const createNewSession = () => {
     const newSession: ChatSession = {
       id: nanoid(),
-      title: 'New Chat',
+      title: "New Chat",
       messages: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
-    
-    setSessions(prev => [newSession, ...prev]);
+    setSessions([newSession]);
     setCurrentSessionId(newSession.id);
     setSidebarOpen(false);
   };
@@ -65,31 +84,39 @@ export default function ChatInterface() {
     ));
   };
 
-  // Simulate AI response
+  // Simulate AI response (this will be replaced by actual API call later)
   const simulateAIResponse = async (userMessage: string) => {
-    const responses = [
-      "That's an interesting question! Let me think about this...",
-      "I understand what you're asking. Here's my perspective on that topic...",
-      "Great question! Based on the information available, I can tell you that...",
-      "I appreciate you sharing that with me. Here's what I think about your situation...",
-      "That's a thoughtful inquiry. Let me provide you with a comprehensive response...",
-      "I see what you're getting at. This is definitely something worth exploring further...",
-      "Thank you for that question. I'd be happy to help you understand this better...",
-      "That's a complex topic with several aspects to consider. Let me break it down for you..."
-    ];
+    // const responses = [
+    //   "That's an interesting question! Let me think about this...",
+    //   "I understand what you're asking. Here's my perspective on that topic...",
+    //   "Great question! Based on the information available, I can tell you that...",
+    //   "I appreciate you sharing that with me. Here's what I think about your situation...",
+    //   "That's a thoughtful inquiry. Let me provide you with a comprehensive response...",
+    //   "I see what you're getting at. This is definitely something worth exploring further...",
+    //   "Thank you for that question. I'd be happy to help you understand this better...",
+    //   "That's a complex topic with several aspects to consider. Let me break it down for you..."
+    // ];
 
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    const fullResponse = `${randomResponse}\n\nThis is a simulated response to demonstrate the chat interface. In a real implementation, this would be connected to an actual LLM API like OpenAI's GPT, Anthropic's Claude, or Google's Gemini.\n\nYour message was: "${userMessage}"`;
+    // const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    // const fullResponse = `${randomResponse}\n\nThis is a simulated response to demonstrate the chat interface. In a real implementation, this would be connected to an actual LLM API like OpenAI's GPT, Anthropic's Claude, or Google's Gemini.\n\nYour message was: "${userMessage}"`
 
-    // Simulate typing delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    // // Simulate typing delay
+    // await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
-    return fullResponse;
+    // return fullResponse;
+    try {
+      const response = await sendMessage(userMessage);
+      return response.answer;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
   };
 
   const handleSendMessage = async (content: string) => {
     if (!currentSessionId) {
-      createNewSession();
+      console.error("No current session to send message to.");
+      setError("No active chat session. Please create a new one.");
       return;
     }
 
@@ -97,18 +124,18 @@ export default function ChatInterface() {
       id: nanoid(),
       content,
       role: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      answer: undefined
     };
 
-    // Add user message
     addMessage(currentSessionId, userMessage);
 
-    // Update session title if it's the first message
     if (messages.length === 0) {
       updateSessionTitle(currentSessionId, content);
     }
 
-    setIsLoading(true);
+    setIsGenerating(true); // Set isGenerating to true when AI response is being generated
+    setError(null);
 
     try {
       const aiResponse = await simulateAIResponse(content);
@@ -117,56 +144,61 @@ export default function ChatInterface() {
         id: nanoid(),
         content: aiResponse,
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        answer: undefined
       };
 
       addMessage(currentSessionId, assistantMessage);
-    } catch (error) {
-      console.error('Error getting AI response:', error);
+    } catch (err) {
+      console.error('Error getting AI response:', err);
+      setError("I apologize, but I encountered an error while processing your request. Please try again.");
       
       const errorMessage: Message = {
         id: nanoid(),
         content: "I apologize, but I encountered an error while processing your request. Please try again.",
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        answer: undefined
       };
 
       addMessage(currentSessionId, errorMessage);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false); // Set isGenerating to false after AI response
     }
   };
 
-  const handleDeleteSession = (sessionId: string) => {
-    setSessions(prev => prev.filter(s => s.id !== sessionId));
-    if (currentSessionId === sessionId) {
-      setCurrentSessionId(null);
-    }
+  const handleDeleteSession = async (sessionId: string) => {
+    // No longer deleting sessions via API, just clearing current chat
+    createNewSession();
   };
-
-  // Initialize with a default session if none exists
-  useEffect(() => {
-    if (sessions.length === 0) {
-      createNewSession();
-    }
-  }, []);
 
   return (
     <div className="flex h-full bg-white">
       <Sidebar
-        sessions={sessions}
-        currentSessionId={currentSessionId}
+        // sessions={sessions}
+        // currentSessionId={currentSessionId}
         onNewChat={createNewSession}
-        onSelectSession={setCurrentSessionId}
-        onDeleteSession={handleDeleteSession}
+        // onSelectSession={setCurrentSessionId}
+        // onDeleteSession={handleDeleteSession}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        // isLoading={isLoading} // Pass isLoading to Sidebar
       />
 
       <div className="flex-1 flex flex-col lg:ml-0">
         {/* Main Chat Area */}
         <div className="flex-1 overflow-y-auto">
-          {messages.length === 0 ? (
+          {error && ( // Display error message
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4" role="alert">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline"> {error}</span>
+            </div>
+          )}
+          {isLoading && messages.length === 0 ? ( // Show loading indicator when fetching initial sessions/messages
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500"></div>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full px-4">
               <div className="text-center max-w-md">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -187,7 +219,7 @@ export default function ChatInterface() {
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
               ))}
-              {isLoading && <TypingIndicator />}
+              {isGenerating && <TypingIndicator />} {/* Use isGenerating for typing indicator */}
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -196,8 +228,8 @@ export default function ChatInterface() {
         {/* Chat Input */}
         <ChatInput
           onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-          onStopGeneration={() => setIsLoading(false)}
+          isLoading={isGenerating} // Pass isGenerating to ChatInput
+          onStopGeneration={() => setIsGenerating(false)}
         />
       </div>
     </div>

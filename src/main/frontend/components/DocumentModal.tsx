@@ -4,19 +4,47 @@ import { Document } from '../types/document';
 
 interface DocumentModalProps {
   document: Document | null;
-  onSave: (document: Partial<Document>) => void;
+  onSave: (document: Partial<Document>, file?: File) => void;
   onClose: () => void;
 }
 
 export default function DocumentModal({ document, onSave, onClose }: DocumentModalProps) {
   const [formData, setFormData] = useState({
     name: '',
-    content: '',
     type: 'txt' as Document['type'], // Initialize type for new documents
     file: null as File | null, // To store the selected file
     link: '' // To store the web link
   });
   const [selectedTab, setSelectedTab] = useState<'text' | 'file' | 'link'>('text');
+
+  useEffect(() => {
+    if (document) {
+      setFormData({
+        name: document.name,
+        type: document.type,
+        file: null,
+        link: ''
+      });
+      // Determine selectedTab based on document type if editing
+      if (document.type === 'link') {
+        setSelectedTab('link');
+        setFormData(prev => ({ ...prev, link: document.description || '' })); // Assuming description stores the link
+      } else if (document.type === 'txt') {
+        setSelectedTab('text');
+        // For text type, if we had content, we would load it here.
+      } else {
+        setSelectedTab('file');
+      }
+    } else {
+      setFormData({
+        name: '',
+        type: 'txt',
+        file: null,
+        link: ''
+      });
+      setSelectedTab('text');
+    }
+  }, [document]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,17 +54,19 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
 
     if (selectedTab === 'text') {
       docToSave.type = 'txt';
+      onSave(docToSave);
     } else if (selectedTab === 'file') {
       if (formData.file) {
-        // In a real application, you would upload the file to a server
-        // and store a reference (e.g., URL) in content.
-        // For this example, we'll just store the file name and a placeholder content.
+        onSave(docToSave, formData.file);
+      } else {
+        // Handle case where file is not selected but tab is file
+        alert("Please select a file to upload.");
       }
     } else if (selectedTab === 'link') {
-      docToSave.type = 'link'; // A new type for links, might need to add to Document interface
+      docToSave.type = 'link';
+      docToSave.description = formData.link; // Store link in description
+      onSave(docToSave);
     }
-
-    onSave(docToSave);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,14 +143,15 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
             {selectedTab === 'text' && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Content *
+                  Content (Not yet implemented for saving)
                 </label>
                 <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  value=""
+                  onChange={() => {}}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all duration-150 resize-none font-mono text-sm"
-                  placeholder="Enter document content..."
+                  placeholder="Text content saving is not yet implemented."
                   rows={8}
+                  disabled
                 />
               </div>
             )}

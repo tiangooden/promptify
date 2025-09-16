@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Square } from 'lucide-react';
+import { sendMessage } from '../utils/api';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -19,11 +20,18 @@ export default function ChatInput({ onSendMessage, isLoading, onStopGeneration }
     }
   }, [message]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
-      onSendMessage(message.trim());
-      setMessage('');
+      const messageToSend = message.trim();
+      setMessage(''); // Clear the input field immediately
+      try {
+        await sendMessage(messageToSend);
+        onSendMessage(messageToSend);
+      } catch (error) {
+        console.error("Failed to send message:", error);
+        // TODO: Handle error in UI
+      }
     }
   };
 

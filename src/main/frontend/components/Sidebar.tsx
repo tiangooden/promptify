@@ -1,23 +1,13 @@
-import React from 'react';
-import { Plus, MessageSquare, Menu, X, Trash2, Edit3 } from 'lucide-react';
-import { ChatSession } from '../types/chat';
+import { Plus, MessageSquare, Menu, X } from 'lucide-react';
 
 interface SidebarProps {
-  sessions: ChatSession[];
-  currentSessionId: string | null;
   onNewChat: () => void;
-  onSelectSession: (sessionId: string) => void;
-  onDeleteSession: (sessionId: string) => void;
   isOpen: boolean;
   onToggle: () => void;
 }
 
 export default function Sidebar({
-  sessions,
-  currentSessionId,
   onNewChat,
-  onSelectSession,
-  onDeleteSession,
   isOpen,
   onToggle
 }: SidebarProps) {
@@ -69,7 +59,7 @@ export default function Sidebar({
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             <h3 className="text-sm font-medium text-slate-400 mb-3">Recent Chats</h3>
 
-            {sessions.length === 0 ? (
+            {/* {sessions.length === 0 ? (
               <div className="text-center py-8 text-slate-400">
                 <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No chats yet</p>
@@ -106,7 +96,12 @@ export default function Sidebar({
                   </button>
                 </div>
               ))
-            )}
+            )} */}
+            <div className="text-center py-8 text-slate-400">
+              <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No chats yet</p>
+              <p className="text-xs mt-1">Start a conversation to see your chat history</p>
+            </div>
           </div>
 
           {/* Footer */}

@@ -15,6 +15,7 @@ import com.example.application.requests.IngestTextRequest;
 import com.example.application.requests.IngestUrlRequest;
 import com.example.application.services.IngestService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -26,15 +27,15 @@ public class IngestController {
 
     @PostMapping("/text")
     @LogExecutionTime
-    public ResponseEntity<?> ingestText(@RequestBody IngestTextRequest request)
+    public ResponseEntity<?> ingestText(@RequestBody @Valid IngestTextRequest request)
             throws IOException, InterruptedException {
         ingestService.ingestText(request.getText());
-        return ResponseEntity.ok("Ingested");
+        return ResponseEntity.ok("text ingested");
     }
 
     @PostMapping("/url")
     @LogExecutionTime
-    public ResponseEntity<?> ingestFromUrl(@RequestBody IngestUrlRequest request)
+    public ResponseEntity<?> ingestFromUrl(@RequestBody @Valid IngestUrlRequest request)
             throws IOException, InterruptedException {
         ingestService.ingestFromUrl(request.getUrl());
         return ResponseEntity.ok("URL content ingested");

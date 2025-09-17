@@ -21,5 +21,5 @@ public class Document {
     @Column(columnDefinition = "text")
     private String content;
     @Column(name = "embedding", columnDefinition = "vector")
-    private Double[] embedding;
+    private float[] embedding;
 }

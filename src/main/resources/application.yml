@@ -20,6 +20,11 @@ spring:
   ai:
     ollama:
       base-url: http://localhost:11434
+      init:
+        pull-model-strategy: always
+        embedding:
+          additional-models:
+            - nomic-embed-text
       chat:
         options:
           model: gemma3
@@ -30,8 +35,3 @@ spring:
 vaadin:
   launch-browser: true
   allowed-packages: com.vaadin,org.vaadin,com.flowingcode,com.example.application
-
-ollama:
-  host: http://localhost:11434
-  embed-path: /api/embeddings
-  embed-model-name: nomic-embed-text

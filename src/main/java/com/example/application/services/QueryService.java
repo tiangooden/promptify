@@ -5,12 +5,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
@@ -21,14 +23,15 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class QueryService {
-    private final EmbeddingService embeddingService;
     private final DataSource dataSource;
+    private final EmbeddingModel embeddingModel;
     private final OllamaChatModel chatModel;
 
     public String query(String prompt) throws IOException, InterruptedException {
-        Double[] embeddingArray = embeddingService.getEmbedding(prompt);
-        var similarDocuments = Arrays.stream(embeddingArray)
-                .map(String::valueOf)
+        EmbeddingResponse embeddingResponse = this.embeddingModel.embedForResponse(List.of(prompt));
+        float[] output = embeddingResponse.getResult().getOutput();
+        String similarDocuments = IntStream.range(0, output.length)
+                .mapToObj(i -> String.valueOf(output[i]))
                 .collect(Collectors.joining(",", "[", "]"));
         List<Document> relevantDocs = new ArrayList<>();
         try (Connection conn = dataSource.getConnection()) {
@@ -40,7 +43,7 @@ public class QueryService {
                 relevantDocs.add(Document.builder()
                         .id(rs.getLong("id"))
                         .content(rs.getString("content"))
-                        .embedding(parseVectorToDoubleArray(rs.getString("embedding")))
+                        .embedding(parseVectorToFloatArray(rs.getString("embedding")))
                         .build());
             }
         } catch (Exception e) {
@@ -53,14 +56,14 @@ public class QueryService {
         return answer;
     }
 
-    private Double[] parseVectorToDoubleArray(String vectorStr) {
+    private float[] parseVectorToFloatArray(String vectorStr) {
         if (vectorStr == null || vectorStr.isBlank())
-            return new Double[0];
+            return new float[0];
         vectorStr = vectorStr.replaceAll("[\\[\\]]", ""); // Remove brackets
         String[] parts = vectorStr.split(",");
-        Double[] result = new Double[parts.length];
+        float[] result = new float[parts.length];
         for (int i = 0; i < parts.length; i++) {
-            result[i] = Double.parseDouble(parts[i].trim());
+            result[i] = Float.parseFloat(parts[i].trim());
         }
         return result;
     }

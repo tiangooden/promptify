@@ -48,7 +48,7 @@ export default function Sidebar({
           <div className="p-4 border-b border-slate-700">
             <button
               onClick={onNewChat}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors duration-150 group"
+              className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-200 hover:bg-emerald-300 rounded-lg transition-colors duration-150 group"
             >
               <Plus size={20} className="group-hover:scale-110 transition-transform duration-150" />
               New Chat

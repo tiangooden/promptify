@@ -1,8 +1,10 @@
 package com.example.application.requests;
 
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
 
-@Data
+@Getter
 public class QueryRequest {
+    @NotBlank(message = "Prompt is required")
     private String prompt;
 }

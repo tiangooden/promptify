@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
 import com.example.application.models.Document;
@@ -20,9 +21,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class QueryService {
-    private final LLMService llmService;
     private final EmbeddingService embeddingService;
     private final DataSource dataSource;
+    private final OllamaChatModel chatModel;
 
     public String query(String prompt) throws IOException, InterruptedException {
         Double[] embeddingArray = embeddingService.getEmbedding(prompt);
@@ -48,7 +49,7 @@ public class QueryService {
         String context = relevantDocs.stream()
                 .map(Document::getContent)
                 .collect(Collectors.joining("\n---\n"));
-        String answer = llmService.callLLMService(prompt, context);
+        String answer = chatModel.call(context + "\n\n" + prompt);
         return answer;
     }
 

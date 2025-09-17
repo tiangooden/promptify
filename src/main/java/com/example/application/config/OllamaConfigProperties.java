@@ -11,6 +11,4 @@ public class OllamaConfigProperties {
     private String host;
     private String embedPath;
     private String embedModelName;
-    private String queryPath;
-    private String queryModelName;
 }

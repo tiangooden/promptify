@@ -31,15 +31,12 @@ public class QueryService {
     public String query(String prompt) throws IOException, InterruptedException {
         EmbeddingResponse embeddingResponse = this.embeddingModel.embedForResponse(List.of(prompt));
         float[] output = embeddingResponse.getResult().getOutput();
-        String similarDocuments = IntStream.range(0, output.length)
-                .mapToObj(i -> String.valueOf(output[i]))
-                .collect(Collectors.joining(",", "[", "]"));
         List<Document> relevantDocs = new ArrayList<>();
         try (Connection conn = dataSource.getConnection()) {
             PGvector.addVectorType(conn);
             String sql = "SELECT * FROM document ORDER BY embedding <-> CAST(? AS vector) LIMIT 5";
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, similarDocuments);
+            ps.setObject(1, new PGvector(output));
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 var embeddings = (PGvector) rs.getObject("embedding");

@@ -3,7 +3,6 @@ import { Document } from "../types/document";
 
 import { API_BASE_URL } from "./constants";
 
-// Chat API
 export const getChatSessions = async (): Promise<ChatSession[]> => {
   const response = await fetch(`${API_BASE_URL}/chat/sessions`);
   if (!response.ok) {
@@ -57,7 +56,6 @@ export const sendMessage = async (content: string): Promise<Message> => {
   return response.json();
 };
 
-// Document API
 export const getDocuments = async (): Promise<Document[]> => {
   const response = await fetch(`${API_BASE_URL}/documents`);
   if (!response.ok) {
@@ -66,11 +64,25 @@ export const getDocuments = async (): Promise<Document[]> => {
   return response.json();
 };
 
+export const ingestText = async (content: string): Promise<Document> => {
+  const response = await fetch(`${API_BASE_URL}/ingest/text`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain",
+    },
+    body: content,
+  });
+  if (!response.ok) {
+    throw new Error("Failed to ingest text");
+  }
+  return response.json();
+};
+
 export const uploadDocument = async (file: File): Promise<Document> => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+  const response = await fetch(`${API_BASE_URL}/ingest/file`, {
     method: "POST",
     body: formData,
   });

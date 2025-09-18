@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, FileText } from 'lucide-react';
 import { Document } from '../types/document';
+import { useTextIngest } from '../hooks/useTextIngest';
 
 interface DocumentModalProps {
   document: Document | null;
@@ -9,9 +10,10 @@ interface DocumentModalProps {
 }
 
 export default function DocumentModal({ document, onSave, onClose }: DocumentModalProps) {
+  const { ingestTextContent, isLoading: isIngestLoading, error: ingestError } = useTextIngest();
   const [formData, setFormData] = useState({
     name: '',
-    type: 'txt' as Document['type'], // Initialize type for new documents
+    content: '',
     file: null as File | null, // To store the selected file
     link: '' // To store the web link
   });
@@ -21,24 +23,14 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
     if (document) {
       setFormData({
         name: document.name,
-        type: document.type,
+        content: document.content || '',
         file: null,
         link: ''
       });
-      // Determine selectedTab based on document type if editing
-      if (document.type === 'link') {
-        setSelectedTab('link');
-        setFormData(prev => ({ ...prev, link: document.description || '' })); // Assuming description stores the link
-      } else if (document.type === 'txt') {
-        setSelectedTab('text');
-        // For text type, if we had content, we would load it here.
-      } else {
-        setSelectedTab('file');
-      }
     } else {
       setFormData({
         name: '',
-        type: 'txt',
+        content: '',
         file: null,
         link: ''
       });
@@ -46,15 +38,25 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
     }
   }, [document]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const docToSave: Partial<Document> = {
       name: formData.name,
     };
 
     if (selectedTab === 'text') {
-      docToSave.type = 'txt';
-      onSave(docToSave);
+      if (formData.content.trim()) {
+        try {
+          const ingestedDocument = await ingestTextContent(formData.content);
+          if (ingestedDocument) {
+            onSave({...docToSave, content: formData.content});
+          }
+        } catch (error) {
+          console.error('Error ingesting text:', error);
+        }
+      } else {
+        alert("Please enter some text content.");
+      }
     } else if (selectedTab === 'file') {
       if (formData.file) {
         onSave(docToSave, formData.file);
@@ -63,8 +65,6 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
         alert("Please select a file to upload.");
       }
     } else if (selectedTab === 'link') {
-      docToSave.type = 'link';
-      docToSave.description = formData.link; // Store link in description
       onSave(docToSave);
     }
   };
@@ -143,16 +143,22 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
             {selectedTab === 'text' && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Content (Not yet implemented for saving)
+                  Content
                 </label>
                 <textarea
-                  value=""
-                  onChange={() => {}}
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 outline-none transition-all duration-150 resize-none font-mono text-sm"
-                  placeholder="Text content saving is not yet implemented."
+                  placeholder="Enter text content to ingest..."
                   rows={8}
-                  disabled
+                  disabled={isIngestLoading}
                 />
+                {ingestError && (
+                  <p className="mt-2 text-sm text-red-600">{ingestError}</p>
+                )}
+                {isIngestLoading && (
+                  <p className="mt-2 text-sm text-emerald-600">Processing text...</p>
+                )}
               </div>
             )}
 
@@ -194,15 +200,17 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-150"
+              disabled={isIngestLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors duration-150"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-lg transition-colors duration-150"
+              disabled={isIngestLoading}
             >
               <Save size={16} />
-              {document ? 'Update' : 'Create'} Document
+              {isIngestLoading ? 'Processing...' : document ? 'Update' : 'Create'} Document
             </button>
           </div>
         </form>

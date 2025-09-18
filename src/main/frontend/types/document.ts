@@ -1,10 +1,7 @@
 export interface Document {
   id: string;
   name: string;
-  type: 'pdf' | 'doc' | 'txt' | 'md' | 'xlsx' | 'pptx' | 'image' | 'link' |'other';
-  createdAt: Date;
-  updatedAt: Date;
-  description?: string;
+  content?: string;
 }
 
 export interface DocumentFilter {

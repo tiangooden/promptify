@@ -1,28 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Grid3X3, 
-  List, 
-  Filter, 
-  Download, 
-  Trash2, 
-  Edit3, 
-  FileText, 
-  File, 
-  Image, 
+import {
+  Search,
+  Plus,
+  Grid3X3,
+  List,
+  Trash2,
+  Edit3,
+  FileText,
+  File,
+  Image,
   FileSpreadsheet,
   Presentation,
-  MoreVertical,
-  Eye,
-  Calendar,
-  HardDrive,
-  Tag,
   CheckSquare,
   Square,
   X
 } from 'lucide-react';
-import { nanoid } from 'nanoid';
 import { Document, DocumentFilter, ViewMode } from '../types/document';
 import DocumentModal from './DocumentModal';
 import { getDocuments, deleteDocument, uploadDocument } from '../utils/api';
@@ -67,33 +59,24 @@ export default function DocumentManagement() {
 
     // Search filter
     if (filter.search) {
-      filtered = filtered.filter(doc => 
+      filtered = filtered.filter(doc =>
         doc.name.toLowerCase().includes(filter.search.toLowerCase()) ||
-        doc.description?.toLowerCase().includes(filter.search.toLowerCase())
+        doc.content?.toLowerCase().includes(filter.search.toLowerCase())
       );
-    }
-
-    // Type filter
-    if (filter.type !== 'all') {
-      filtered = filtered.filter(doc => doc.type === filter.type);
     }
 
     // Sort
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (filter.sortBy) {
         case 'name':
           aValue = a.name.toLowerCase();
           bValue = b.name.toLowerCase();
           break;
         case 'date':
-          aValue = a.updatedAt.getTime();
-          bValue = b.updatedAt.getTime();
-          break;
-        case 'type':
-          aValue = a.type;
-          bValue = b.type;
+          aValue = a.content?.toLowerCase();
+          bValue = b.content?.toLowerCase();
           break;
         default:
           return 0;
@@ -118,6 +101,7 @@ export default function DocumentManagement() {
   };
 
   const formatDate = (date: Date) => {
+    if (!date) return '';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -206,8 +190,8 @@ export default function DocumentManagement() {
     try {
       if (editingDocument) {
         // Update existing document (not implemented in API yet)
-        setDocuments(prev => prev.map(doc => 
-          doc.id === editingDocument.id 
+        setDocuments(prev => prev.map(doc =>
+          doc.id === editingDocument.id
             ? { ...doc, ...docData, updatedAt: new Date() }
             : doc
         ));
@@ -260,22 +244,20 @@ export default function DocumentManagement() {
           <div className="flex border border-slate-200 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 transition-colors duration-150 ${
-                viewMode === 'table' 
-                  ? 'bg-emerald-100 text-emerald-700' 
+              className={`p-2 transition-colors duration-150 ${viewMode === 'table'
+                  ? 'bg-emerald-100 text-emerald-700'
                   : 'text-slate-500 hover:bg-slate-50'
-              }`}
+                }`}
               disabled={isLoading} // Disable button when loading
             >
               <List size={16} />
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 transition-colors duration-150 ${
-                viewMode === 'grid' 
-                  ? 'bg-emerald-100 text-emerald-700' 
+              className={`p-2 transition-colors duration-150 ${viewMode === 'grid'
+                  ? 'bg-emerald-100 text-emerald-700'
                   : 'text-slate-500 hover:bg-slate-50'
-              }`}
+                }`}
               disabled={isLoading} // Disable button when loading
             >
               <Grid3X3 size={16} />
@@ -328,7 +310,7 @@ export default function DocumentManagement() {
               <FileText size={48} className="mx-auto mb-4 text-slate-300" />
               <h3 className="text-lg font-medium text-slate-600 mb-2">No documents found</h3>
               <p className="text-slate-400">
-                {filter.search || filter.type !== 'all' 
+                {filter.search || filter.type !== 'all'
                   ? 'Try adjusting your filters or search terms'
                   : 'Upload your first document to get started'
                 }
@@ -346,16 +328,14 @@ export default function DocumentManagement() {
                       className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
                       disabled={isLoading} // Disable button when loading
                     >
-                      {selectedDocuments.size === filteredDocuments.length ? 
-                        <CheckSquare size={16} /> : 
+                      {selectedDocuments.size === filteredDocuments.length ?
+                        <CheckSquare size={16} /> :
                         <Square size={16} />
                       }
                     </button>
                   </th>
                   <th className="text-left p-4 font-medium text-slate-700">Name</th>
-                  <th className="text-left p-4 font-medium text-slate-700">Type</th>
-                  <th className="text-left p-4 font-medium text-slate-700">Created</th>
-                  <th className="text-left p-4 font-medium text-slate-700">Modified</th>
+                  <th className="text-left p-4 font-medium text-slate-700">Content</th>
                   <th className="w-16 p-4">Actions</th>
                 </tr>
               </thead>
@@ -368,23 +348,20 @@ export default function DocumentManagement() {
                         className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
                         disabled={isLoading} // Disable button when loading
                       >
-                        {selectedDocuments.has(doc.id) ? 
-                          <CheckSquare size={16} /> : 
+                        {selectedDocuments.has(doc.id) ?
+                          <CheckSquare size={16} /> :
                           <Square size={16} />
                         }
                       </button>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        {getFileIcon(doc.type)}
                         <div>
                           <div className="font-medium text-slate-800">{doc.name}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-600 uppercase text-sm">{doc.type}</td>
-                    <td className="p-4 text-slate-600">{formatDate(doc.createdAt)}</td>
-                    <td className="p-4 text-slate-600">{formatDate(doc.updatedAt)}</td>
+                    <td className="p-4 text-slate-600 uppercase text-sm">{doc.content}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-1">
                         <button
@@ -416,14 +393,13 @@ export default function DocumentManagement() {
               <div key={doc.id} className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 group">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    {getFileIcon(doc.type)}
                     <button
                       onClick={() => handleSelectDocument(doc.id)}
                       className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
                       disabled={isLoading} // Disable button when loading
                     >
-                      {selectedDocuments.has(doc.id) ? 
-                        <CheckSquare size={16} /> : 
+                      {selectedDocuments.has(doc.id) ?
+                        <CheckSquare size={16} /> :
                         <Square size={16} />
                       }
                     </button>
@@ -447,28 +423,15 @@ export default function DocumentManagement() {
                     </button>
                   </div>
                 </div>
-                
+
                 <h3 className="font-medium text-slate-800 mb-2 truncate" title={doc.name}>
                   {doc.name}
                 </h3>
-                
-                <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    Created {formatDate(doc.createdAt)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    Modified {formatDate(doc.updatedAt)}
-                  </span>
-                </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Document Modal */}
       {showModal && (
         <DocumentModal
           document={editingDocument}
@@ -477,7 +440,7 @@ export default function DocumentManagement() {
             setShowModal(false);
             setEditingDocument(null);
           }}
-          // isLoading={isLoading} // Pass isLoading to DocumentModal
+        // isLoading={isLoading} // Pass isLoading to DocumentModal
         />
       )}
     </div>

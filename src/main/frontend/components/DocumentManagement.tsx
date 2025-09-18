@@ -14,6 +14,7 @@ import {
 import { Document, DocumentFilter, ViewMode } from '../types/document';
 import DocumentModal from './DocumentModal';
 import { getDocuments, deleteDocument, uploadDocument } from '../utils/api';
+import { useTextIngest } from 'Frontend/hooks/useTextIngest';
 
 export default function DocumentManagement() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -24,12 +25,20 @@ export default function DocumentManagement() {
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    content: '',
+    file: null as File | null,
+    link: ''
+  });
+  const [selectedTab, setSelectedTab] = useState<'text' | 'file' | 'link'>('text');
   const [filter, setFilter] = useState<DocumentFilter>({
     search: '',
     type: 'all',
     sortBy: 'date',
     sortOrder: 'desc'
   });
+  const { ingestTextContent, isLoading: isIngestLoading, error: ingestError } = useTextIngest();
 
   useEffect(() => {
     fetchDocuments();
@@ -142,11 +151,13 @@ export default function DocumentManagement() {
     setError(null);
     try {
       if (editingDocument) {
+        await ingestTextContent(docData.content || '', docData.name || '');
         setDocuments(prev => prev.map(doc =>
           doc.id === editingDocument.id
             ? { ...doc, ...docData, updatedAt: new Date() }
             : doc
         ));
+        await fetchDocuments();
       } else if (file) {
         const newDoc = await uploadDocument(file);
         setDocuments(prev => [newDoc, ...prev]);
@@ -395,7 +406,10 @@ export default function DocumentManagement() {
             setShowModal(false);
             setEditingDocument(null);
           }}
-        // isLoading={isLoading} // Pass isLoading to DocumentModal
+          formData={formData}
+          setFormData={setFormData}
+          selectedTab={selectedTab}
+          setSelectedTab={setSelectedTab}
         />
       )}
     </div>

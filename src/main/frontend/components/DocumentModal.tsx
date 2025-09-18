@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { X, Save, FileText } from 'lucide-react';
 import { Document } from '../types/document';
 import { useTextIngest } from '../hooks/useTextIngest';
@@ -7,17 +7,24 @@ interface DocumentModalProps {
   document: Document | null;
   onSave: (document: Partial<Document>, file?: File) => void;
   onClose: () => void;
+  formData: {
+    name: string;
+    content: string;
+    file: File | null;
+    link: string;
+  };
+  setFormData: React.Dispatch<React.SetStateAction<{
+    name: string;
+    content: string;
+    file: File | null;
+    link: string;
+  }>>;
+  selectedTab: 'text' | 'file' | 'link';
+  setSelectedTab: React.Dispatch<React.SetStateAction<'text' | 'file' | 'link'>>;
 }
 
-export default function DocumentModal({ document, onSave, onClose }: DocumentModalProps) {
+export default function DocumentModal({ document, onSave, onClose, formData, setFormData, selectedTab, setSelectedTab }: DocumentModalProps) {
   const { ingestTextContent, isLoading: isIngestLoading, error: ingestError } = useTextIngest();
-  const [formData, setFormData] = useState({
-    name: '',
-    content: '',
-    file: null as File | null,
-    link: ''
-  });
-  const [selectedTab, setSelectedTab] = useState<'text' | 'file' | 'link'>('text');
 
   useEffect(() => {
     if (document) {
@@ -36,7 +43,7 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
       });
       setSelectedTab('text');
     }
-  }, [document]);
+  }, [document, setFormData, setSelectedTab]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +66,6 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
       if (formData.file) {
         onSave(docToSave, formData.file);
       } else {
-        // Handle case where file is not selected but tab is file
         alert("Please select a file to upload.");
       }
     } else if (selectedTab === 'link') {

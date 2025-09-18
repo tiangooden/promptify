@@ -21,6 +21,7 @@ public class Document {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
     private String name;
+    @Column(columnDefinition = "text")
     private String content;
     @Column(name = "embedding", columnDefinition = "vector")
     private float[] embedding;

@@ -5,16 +5,14 @@ export function useTextIngest() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ingestTextContent = useCallback(async (content: string) => {
+  const ingestTextContent = useCallback(async (content: string, name: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      const document = await ingestText(content);
-      return document;
+      await ingestText(content, name);
     } catch (err) {
       console.error('Failed to ingest text:', err);
       setError('Failed to ingest text. Please try again.');
-      return null;
     } finally {
       setIsLoading(false);
     }

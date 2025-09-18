@@ -64,13 +64,13 @@ export const getDocuments = async (): Promise<Document[]> => {
   return response.json();
 };
 
-export const ingestText = async (content: string): Promise<Document> => {
+export const ingestText = async (text: string, name: string): Promise<Document> => {
   const response = await fetch(`${API_BASE_URL}/ingest/text`, {
     method: "POST",
     headers: {
-      "Content-Type": "text/plain",
+      "Content-Type": "application/json",
     },
-    body: content,
+    body: JSON.stringify({ text, name }),
   });
   if (!response.ok) {
     throw new Error("Failed to ingest text");

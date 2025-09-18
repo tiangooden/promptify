@@ -7,10 +7,6 @@ import {
   Trash2,
   Edit3,
   FileText,
-  File,
-  Image,
-  FileSpreadsheet,
-  Presentation,
   CheckSquare,
   Square,
   X
@@ -26,8 +22,8 @@ export default function DocumentManagement() {
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // New state for loading
-  const [error, setError] = useState<string | null>(null); // New state for error messages
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<DocumentFilter>({
     search: '',
     type: 'all',
@@ -53,11 +49,9 @@ export default function DocumentManagement() {
     }
   };
 
-  // Filter and sort documents
   useEffect(() => {
     let filtered = [...documents];
 
-    // Search filter
     if (filter.search) {
       filtered = filtered.filter(doc =>
         doc.name.toLowerCase().includes(filter.search.toLowerCase()) ||
@@ -65,7 +59,6 @@ export default function DocumentManagement() {
       );
     }
 
-    // Sort
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
 
@@ -92,41 +85,6 @@ export default function DocumentManagement() {
     setFilteredDocuments(filtered);
   }, [documents, filter]);
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (date: Date) => {
-    if (!date) return '';
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case 'pdf':
-      case 'doc':
-      case 'txt':
-      case 'md':
-        return <FileText size={20} className="text-red-500" />;
-      case 'xlsx':
-        return <FileSpreadsheet size={20} className="text-green-500" />;
-      case 'pptx':
-        return <Presentation size={20} className="text-orange-500" />;
-      case 'image':
-        return <Image size={20} className="text-blue-500" />;
-      default:
-        return <File size={20} className="text-gray-500" />;
-    }
-  };
-
   const handleSelectDocument = (docId: string) => {
     const newSelected = new Set(selectedDocuments);
     if (newSelected.has(docId)) {
@@ -151,11 +109,6 @@ export default function DocumentManagement() {
     try {
       await deleteDocument(docId);
       setDocuments(prev => prev.filter(doc => doc.id !== docId));
-      setSelectedDocuments(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(docId);
-        return newSet;
-      });
     } catch (err) {
       console.error(`Failed to delete document ${docId}:`, err);
       setError(`Failed to delete document. Please try again.`);
@@ -189,7 +142,6 @@ export default function DocumentManagement() {
     setError(null);
     try {
       if (editingDocument) {
-        // Update existing document (not implemented in API yet)
         setDocuments(prev => prev.map(doc =>
           doc.id === editingDocument.id
             ? { ...doc, ...docData, updatedAt: new Date() }
@@ -245,8 +197,8 @@ export default function DocumentManagement() {
             <button
               onClick={() => setViewMode('table')}
               className={`p-2 transition-colors duration-150 ${viewMode === 'table'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'text-slate-500 hover:bg-slate-50'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'text-slate-500 hover:bg-slate-50'
                 }`}
               disabled={isLoading} // Disable button when loading
             >
@@ -255,8 +207,8 @@ export default function DocumentManagement() {
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 transition-colors duration-150 ${viewMode === 'grid'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'text-slate-500 hover:bg-slate-50'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'text-slate-500 hover:bg-slate-50'
                 }`}
               disabled={isLoading} // Disable button when loading
             >
@@ -326,7 +278,7 @@ export default function DocumentManagement() {
                     <button
                       onClick={handleSelectAll}
                       className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
-                      disabled={isLoading} // Disable button when loading
+                      disabled={isLoading}
                     >
                       {selectedDocuments.size === filteredDocuments.length ?
                         <CheckSquare size={16} /> :
@@ -346,7 +298,7 @@ export default function DocumentManagement() {
                       <button
                         onClick={() => handleSelectDocument(doc.id)}
                         className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
-                        disabled={isLoading} // Disable button when loading
+                        disabled={isLoading}
                       >
                         {selectedDocuments.has(doc.id) ?
                           <CheckSquare size={16} /> :
@@ -368,7 +320,7 @@ export default function DocumentManagement() {
                           onClick={() => handleEditDocument(doc)}
                           className="p-1 text-slate-400 hover:text-slate-600 transition-colors duration-150"
                           title="Edit"
-                          disabled={isLoading} // Disable button when loading
+                          disabled={isLoading}
                         >
                           <Edit3 size={14} />
                         </button>
@@ -376,7 +328,7 @@ export default function DocumentManagement() {
                           onClick={() => handleDeleteDocument(doc.id)}
                           className="p-1 text-slate-400 hover:text-red-500 transition-colors duration-150"
                           title="Delete"
-                          disabled={isLoading} // Disable button when loading
+                          disabled={isLoading}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -396,7 +348,7 @@ export default function DocumentManagement() {
                     <button
                       onClick={() => handleSelectDocument(doc.id)}
                       className="text-slate-400 hover:text-slate-600 transition-colors duration-150"
-                      disabled={isLoading} // Disable button when loading
+                      disabled={isLoading}
                     >
                       {selectedDocuments.has(doc.id) ?
                         <CheckSquare size={16} /> :
@@ -409,7 +361,7 @@ export default function DocumentManagement() {
                       onClick={() => handleEditDocument(doc)}
                       className="p-1 text-slate-400 hover:text-slate-600 transition-colors duration-150"
                       title="Edit"
-                      disabled={isLoading} // Disable button when loading
+                      disabled={isLoading}
                     >
                       <Edit3 size={14} />
                     </button>
@@ -417,7 +369,7 @@ export default function DocumentManagement() {
                       onClick={() => handleDeleteDocument(doc.id)}
                       className="p-1 text-slate-400 hover:text-red-500 transition-colors duration-150"
                       title="Delete"
-                      disabled={isLoading} // Disable button when loading
+                      disabled={isLoading}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -427,6 +379,9 @@ export default function DocumentManagement() {
                 <h3 className="font-medium text-slate-800 mb-2 truncate" title={doc.name}>
                   {doc.name}
                 </h3>
+                <h6 className="font-medium text-slate-800 mb-2 truncate" title={doc.content}>
+                  {doc.content}
+                </h6>
               </div>
             ))}
           </div>

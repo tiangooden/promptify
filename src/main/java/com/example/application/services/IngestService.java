@@ -21,10 +21,10 @@ public class IngestService {
     private final DocumentRepository repo;
     private final EmbeddingModel embeddingModel;
 
-    public void ingestText(String text) throws IOException, InterruptedException {
+    public void ingestText(String text, String name) throws IOException, InterruptedException {
         EmbeddingResponse embeddingResponse = this.embeddingModel.embedForResponse(List.of(text));
         float[] output = embeddingResponse.getResult().getOutput();
-        repo.save(Document.builder().content(text).embedding(output).build());
+        repo.save(Document.builder().content(text).name(name).embedding(output).build());
     }
 
     public void ingestFromUrl(String url) throws IOException, InterruptedException {

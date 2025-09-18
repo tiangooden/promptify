@@ -1,6 +1,7 @@
 package com.example.application.controllers;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,15 +23,15 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/ingest")
 @RequiredArgsConstructor
 public class IngestController {
-    
+
     private final IngestService ingestService;
 
     @PostMapping("/text")
     @LogExecutionTime
     public ResponseEntity<?> ingestText(@RequestBody @Valid IngestTextRequest request)
             throws IOException, InterruptedException {
-        ingestService.ingestText(request.getText());
-        return ResponseEntity.ok("text ingested");
+        ingestService.ingestText(request.getText(), request.getName());
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     @PostMapping("/url")
@@ -38,7 +39,7 @@ public class IngestController {
     public ResponseEntity<?> ingestFromUrl(@RequestBody @Valid IngestUrlRequest request)
             throws IOException, InterruptedException {
         ingestService.ingestFromUrl(request.getUrl());
-        return ResponseEntity.ok("URL content ingested");
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     @PostMapping("/file")
@@ -46,6 +47,6 @@ public class IngestController {
     public ResponseEntity<?> ingestFromFile(@RequestParam("file") MultipartFile file)
             throws IOException, InterruptedException {
         ingestService.ingestFromFile(file);
-        return ResponseEntity.ok("File content ingested");
+        return ResponseEntity.ok(Map.of("success", true));
     }
 }

@@ -14,8 +14,8 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
   const [formData, setFormData] = useState({
     name: '',
     content: '',
-    file: null as File | null, // To store the selected file
-    link: '' // To store the web link
+    file: null as File | null,
+    link: ''
   });
   const [selectedTab, setSelectedTab] = useState<'text' | 'file' | 'link'>('text');
 
@@ -47,10 +47,8 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
     if (selectedTab === 'text') {
       if (formData.content.trim()) {
         try {
-          const ingestedDocument = await ingestTextContent(formData.content);
-          if (ingestedDocument) {
-            onSave({...docToSave, content: formData.content});
-          }
+          await ingestTextContent(formData.content, formData.name);
+          onSave(docToSave);
         } catch (error) {
           console.error('Error ingesting text:', error);
         }
@@ -77,8 +75,7 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <div className="flex items-center gap-3">
             <FileText size={20} className="text-emerald-600" />
@@ -94,7 +91,6 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Name */}
@@ -139,7 +135,6 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
               </nav>
             </div>
 
-            {/* Content Input based on selected tab */}
             {selectedTab === 'text' && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -194,7 +189,6 @@ export default function DocumentModal({ document, onSave, onClose }: DocumentMod
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
             <button
               type="button"

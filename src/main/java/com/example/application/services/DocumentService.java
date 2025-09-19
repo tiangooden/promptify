@@ -19,11 +19,7 @@ public class DocumentService {
         return documentRepository.findAllProjectedBy();
     }
 
-    public boolean deleteDocument(Long id) {
-        if (documentRepository.existsById(id)) {
-            documentRepository.deleteById(id);
-            return true;
-        }
-        return false;
+    public void deleteDocument(Long id) {
+        documentRepository.deleteById(id);
     }
 }

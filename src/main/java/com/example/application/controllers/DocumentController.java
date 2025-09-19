@@ -22,14 +22,10 @@ public class DocumentController {
         List<DocumentDTO> documents = documentService.getAllDocuments();
         return ResponseEntity.ok(documents);
     }
-    
+
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
-        boolean deleted = documentService.deleteDocument(id);
-        if (deleted) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        documentService.deleteDocument(id);
+        return ResponseEntity.noContent().build();
     }
 }

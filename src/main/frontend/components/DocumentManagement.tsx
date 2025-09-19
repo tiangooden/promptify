@@ -157,11 +157,11 @@ export default function DocumentManagement() {
             ? { ...doc, ...docData, updatedAt: new Date() }
             : doc
         ));
-        await fetchDocuments();
       } else if (file) {
         const newDoc = await uploadDocument(file);
         setDocuments(prev => [newDoc, ...prev]);
       }
+      await fetchDocuments();
       setShowModal(false);
       setEditingDocument(null);
     } catch (err) {

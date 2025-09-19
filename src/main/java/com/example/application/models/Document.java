@@ -8,12 +8,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Builder
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Document {
@@ -23,6 +21,6 @@ public class Document {
     private String name;
     @Column(columnDefinition = "text")
     private String content;
-    @Column(name = "embedding", columnDefinition = "vector")
+    @Column(columnDefinition = "vector")
     private float[] embedding;
 }

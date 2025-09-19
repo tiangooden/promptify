@@ -2,6 +2,7 @@ package com.example.application.repositories;
 
 import com.example.application.dtos.DocumentDTO;
 import com.example.application.models.Document;
+import com.pgvector.PGvector;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,10 +17,21 @@ public class DocumentRepository {
 
     private final JdbcTemplate jdbcTemplate;
     private final DocumentDTORowMapper documentDTORowMapper;
+    private final DocumentRowMapper documentRowMapper;
 
     public List<DocumentDTO> findAllProjectedBy() {
         String sql = "SELECT id, name, content FROM document";
         return jdbcTemplate.query(sql, documentDTORowMapper);
+    }
+
+    public List<Document> findRelevantDocuments(float[] embedding) {
+        String sql = "SELECT * FROM document ORDER BY embedding <-> CAST(? AS vector) LIMIT 5";
+        return jdbcTemplate.query(connection -> {
+            PGvector.addVectorType(connection);
+            var ps = connection.prepareStatement(sql);
+            ps.setObject(1, new PGvector(embedding));
+            return ps;
+        }, documentRowMapper);
     }
 
     public void save(Document document) {
